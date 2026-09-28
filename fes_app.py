@@ -10,11 +10,10 @@ from google import genai
 # ==========================================
 # 1. KONFIGURATION (LÄDT AUS SECRETS)
 # ==========================================
-# Falls wir lokal ohne Secrets testen, Fallback oder direkt aus st.secrets:
-GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
-BOT_TOKEN = st.secrets["BOT_TOKEN"]
-CHANNEL_ID = st.secrets["CHANNEL_ID"]
-APP_PASSWORD = st.secrets["APP_PASSWORD"]
+GEMINI_API_KEY = st.secrets.get("GEMINI_API_KEY", "")
+BOT_TOKEN = st.secrets.get("BOT_TOKEN", "")
+CHANNEL_ID = st.secrets.get("CHANNEL_ID", "")
+APP_PASSWORD = st.secrets.get("APP_PASSWORD", "")
 # ==========================================
 
 ai_client = genai.Client(api_key=GEMINI_API_KEY.strip())
@@ -229,6 +228,11 @@ def fetch_events(max_pages: int = 3) -> list[dict]:
 
 def check_password() -> bool:
     """Gibt True zurück, wenn das Passwort korrekt eingegeben wurde."""
+    if not APP_PASSWORD:
+        st.error("⚠️ In den Streamlit-Secrets wurde noch kein 'APP_PASSWORD' hinterlegt!")
+        st.info("Bitte unter 'Manage app' -> 'Settings' -> 'Secrets' die Zeile APP_PASSWORD = \"...\" eintragen.")
+        return False
+
     if "authenticated" not in st.session_state:
         st.session_state.authenticated = False
 
