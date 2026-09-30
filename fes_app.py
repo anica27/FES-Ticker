@@ -29,7 +29,7 @@ def clean_text(text: str) -> str:
     return re.sub(r'\s+', ' ', text).strip()
 
 def send_telegram_post(content: str, uploaded_image=None) -> bool:
-    """Sendet Bild- oder Textnachricht mit Markdown-Unterstützung."""
+    """Sendet Bild- oder Textnachricht mit HTML-Unterstützung."""
     token = BOT_TOKEN.strip()
     chat_id = CHANNEL_ID.strip()
 
@@ -41,7 +41,7 @@ def send_telegram_post(content: str, uploaded_image=None) -> bool:
         data = {
             "chat_id": chat_id,
             "caption": content,
-            "parse_mode": "Markdown"
+            "parse_mode": "HTML"
         }
         try:
             resp = requests.post(endpoint, data=data, files=files, timeout=20)
@@ -54,7 +54,7 @@ def send_telegram_post(content: str, uploaded_image=None) -> bool:
     payload = {
         "chat_id": chat_id,
         "text": content,
-        "parse_mode": "Markdown",
+        "parse_mode": "HTML",
         "disable_web_page_preview": False
     }
     try:
@@ -71,16 +71,16 @@ def generate_post_with_gemini(raw_text: str, url: str):
         "Erstelle aus dem folgenden Veranstaltungstext eine fertige Telegram-Nachricht.\n\n"
         "Stil-Vorgaben:\n"
         "- Verwende durchgehend eine direkte, nahbare Ansprache im 'Du' (z. B. 'Diskutiere mit', 'stelle deine Fragen').\n"
-        "- Nutze Telegram-Markdown mit Sternchen (*fett*) für Titel und Abschnitte.\n\n"
+        "- Nutze Telegram-HTML mit Tags (<b>fett</b>, <i>kursiv</i>) für Titel und Abschnitte. Verwende KEINE Markdown-Sternchen!\n\n"
         "Nutze exakt folgendes Schema:\n\n"
-        "🔴 *Friedrich-Ebert-Stiftung Sachsen*\n"
-        "🗣️ *[Format, z. B. Bürgergespräch / Fachgespräch / Tagung / Buchlesung]*:\n"
-        "*„[TITEL DER VERANSTALTUNG]“*\n\n"
+        "🔴 <b>Friedrich-Ebert-Stiftung Sachsen</b>\n"
+        "🗣️ <b>[Format, z. B. Bürgergespräch / Fachgespräch / Tagung / Buchlesung]</b>:\n"
+        "<b>„[TITEL DER VERANSTALTUNG]“</b>\n\n"
         "[1 bis maximal 2 Sätze Hook / Leitfrage, die Lust aufs Mitdiskutieren machen, mit Du-Ansprache]\n\n"
-        "*Mit dabei:*\n"
+        "<b>Mit dabei:</b>\n"
         "- Nenne die Diskutierenden, Referierenden bzw. Autor:innen mit Institution (Format: • Name – Institution).\n"
         "- Falls keine Personen genannt sind, diesen Block komplett weglassen.\n\n"
-        "*Moderation:* [Name, falls vorhanden, sonst Zeile weglassen]\n\n"
+        "<b>Moderation:</b> [Name, falls vorhanden, sonst Zeile weglassen]\n\n"
         "🗓️ [Wochentag, Datum | Uhrzeit – zwingend dem Block 'Termin' entnehmen]\n"
         "📍 [Veranstaltungsort mit vollständiger Adresse]\n"
         "📝 [Anmeldeschluss: Wochentag, Datum – NUR falls Frist vorhanden, sonst komplett weglassen]\n"
@@ -124,15 +124,16 @@ def generate_monthly_overview_with_gemini(all_events: list, selected_month_name:
         f"1. Finde alle Veranstaltungen, die im Monat {selected_month_name} (Monat {selected_month_num}) stattfinden.\n"
         "2. Identifiziere für jede Veranstaltung das exakte Datum (Tag.Monat.), die Stadt/den konkreten Veranstaltungsort und den echten Haupttitel.\n"
         "3. Sortiere die Liste chronologisch nach Datum aufsteigend.\n"
-        "4. Ignoriere Termine aus anderen Monaten vollständig.\n\n"
+        "4. Ignoriere Termine aus anderen Monaten vollständig.\n"
+        "5. Verwende AUSSCHLIESSLICH Telegram-HTML (<b>fett</b>, <i>kursiv</i>) und KEIN Markdown (keine Sternchen oder Unterstriche)!\n\n"
         "Nutze exakt folgendes Ausgabe-Format:\n\n"
-        "🔴 *Friedrich-Ebert-Stiftung Sachsen*\n"
-        f"🗓️ *Unsere Veranstaltungen im {selected_month_name}:*\n\n"
-        "• *[TT.MM.] | [Stadt / Ort]:* [Exakter Titel der Veranstaltung]\n"
+        "🔴 <b>Friedrich-Ebert-Stiftung Sachsen</b>\n"
+        f"🗓️ <b>Unsere Veranstaltungen im {selected_month_name}:</b>\n\n"
+        "• <b>[TT.MM.] | [Stadt / Ort]:</b> [Exakter Titel der Veranstaltung]\n"
         "(wiederhole diese Zeile für jede Veranstaltung dieses Monats)\n\n"
-        "👉 *Alle Details zu den Terminen und zur Anmeldung findest du bei uns auf der Website:*\n"
+        "👉 <b>Alle Details zu den Terminen und zur Anmeldung findest du bei uns auf der Website:</b>\n"
         "https://www.fes.de/landesbuero-sachsen/veranstaltungen-rueckblicke\n\n"
-        "_Detaillierte Infos zu den jeweiligen Veranstaltungen folgen._\n\n"
+        "<i>Detaillierte Infos zu den jeweiligen Veranstaltungen folgen.</i>\n\n"
         "Wichtig: Gib NUR den fertigen Text ohne Einleitung oder Kommentare aus.\n\n"
         f"Veranstaltungsdaten:\n{events_dump}"
     )
@@ -273,9 +274,6 @@ with col_logout2:
         st.session_state.authenticated = False
         st.rerun()
 
-st.set_page_config(page_title="FES Ticker Manager", layout="wide")
-st.title("🏛️ FES Sachsen – Veranstaltungs-Ticker")
-
 col1, col2 = st.columns([3, 1])
 with col2:
     if st.button("🔄 Website neu scannen", use_container_width=True):
@@ -325,7 +323,7 @@ else:
         with col_m1:
             st.caption("💬 **Telegram-Vorschau:**")
             if st.session_state[month_key]:
-                st.markdown(st.session_state[month_key])
+                st.markdown(st.session_state[month_key], unsafe_allow_html=True)
             else:
                 st.info("Klicke rechts auf den Button, um die Übersicht für diesen Monat per KI zusammenzustellen.")
 
