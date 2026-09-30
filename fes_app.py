@@ -29,15 +29,15 @@ def clean_text(text: str) -> str:
     return re.sub(r'\s+', ' ', text).strip()
 
 def markdown_to_telegram_html(text: str) -> str:
-    """Konvertiert verlässlich Markdown-Syntax in valides Telegram-HTML."""
+    """Wandelt eventuelle Markdown-Reste zuverlässig in Telegram-kompatibles HTML um."""
     if not text:
         return ""
-    # Fett formatieren: **text** -> <b>text</b>
+    # Fett: **Text** -> <b>Text</b>
     text = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', text)
-    # Kursiv formatieren: *text* -> <i>text</i> (nur wenn nicht Aufzählungszeichen am Zeilenanfang)
+    text = re.sub(r'__(.+?)__', r'<b>\1</b>', text)
+    # Kursiv: *Text* oder _Text_ -> <i>Text</i>
     text = re.sub(r'(?<!^)(?<!\n)\*(.+?)\*', r'<i>\1</i>', text)
-    # Underscore kursiv: _text_ -> <i>text</i>
-    text = re.sub(r'(?<!\w)_(.+?)_(?!\w)', r'<i>\1</i>', text)
+    text = re.sub(r'(?<![a-zA-Z0-9])_(.+?)_(?![a-zA-Z0-9])', r'<i>\1</i>', text)
     return text
 
 def send_telegram_post(content: str, uploaded_image=None) -> bool:
@@ -77,7 +77,7 @@ def send_telegram_post(content: str, uploaded_image=None) -> bool:
         return False
 
 def generate_post_with_gemini(raw_text: str, url: str):
-    """Erstellt den ausführlichen Einzelpost mit Du-Form und zwingendem HTML."""
+    """Erstellt den ausführlichen Einzelpost mit Du-Form und validen HTML-Tags."""
     if not ai_client:
         return None, "Kein GEMINI_API_KEY konfiguriert."
 
@@ -108,7 +108,7 @@ def generate_post_with_gemini(raw_text: str, url: str):
         "<b>Mit dabei:</b>\n"
         "[Hier die Aufzählung nach den obigen Vorgaben einfügen]\n\n"
         "<b>Moderation:</b> [Name, falls vorhanden, sonst Zeile weglassen]\n\n"
-        "🗓️ [Wochentag, Datum | Uhrzeit – zwingend dem Block 'Termin' entnehmen]\n"
+        "🗓️️ [Wochentag, Datum | Uhrzeit – zwingend dem Block 'Termin' entnehmen]\n"
         "📍 [Veranstaltungsort mit vollständiger Adresse]\n"
         "📝 [Anmeldeschluss: Wochentag, Datum – NUR falls Anmeldefrist vorhanden, sonst Zeile weglassen]\n"
         f"🔗 {url}\n\n"
@@ -159,7 +159,7 @@ def generate_monthly_overview_with_gemini(all_events: list, selected_month_name:
         "5. Verwende AUSSCHLIESSLICH Telegram-HTML (<b>fett</b>, <i>kursiv</i>) und KEIN Markdown (keine Sternchen oder Unterstriche)!\n\n"
         "Nutze exakt folgendes Ausgabe-Format:\n\n"
         "🔴 <b>Friedrich-Ebert-Stiftung Sachsen</b>\n"
-        f"🗓️ <b>Unsere Veranstaltungen im {selected_month_name}:</b>\n\n"
+        f"🗓️️ <b>Unsere Veranstaltungen im {selected_month_name}:</b>\n\n"
         "• <b>[TT.MM.] | [Stadt / Ort]:</b> [Exakter Titel der Veranstaltung]\n"
         "(wiederhole diese Zeile für jede Veranstaltung dieses Monats)\n\n"
         "👉 <b>Alle Details zu den Terminen und zur Anmeldung findest du bei uns auf der Website:</b>\n"
@@ -170,8 +170,9 @@ def generate_monthly_overview_with_gemini(all_events: list, selected_month_name:
     )
 
     models_to_try = [
-        "gemini-2.5-flash",
-        "gemini-2.0-flash",
+        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3.8-flash",
     ]
 
     last_error = ""
@@ -291,13 +292,13 @@ def check_password() -> bool:
 # ==========================================
 # 2. STREAMLIT BENUTZEROBERFLÄCHE
 # ==========================================
+st.set_page_config(page_title="FES Ticker Manager", layout="wide")
 
 # 1. Passwort prüfen – bricht hier ab, falls noch nicht eingeloggt
 if not check_password():
     st.stop()
 
 # 2. Reguläre App für eingeloggte Personen
-st.set_page_config(page_title="FES Ticker Manager", layout="wide")
 st.title("🏛️ FES Sachsen – Veranstaltungs-Ticker")
 
 col_logout1, col_logout2 = st.columns([5, 1])
@@ -329,7 +330,7 @@ else:
     # TAB 1: MONATSÜBERSICHT
     # ----------------------------------------------------
     with tab_monthly:
-        st.subheader("🗓️️ Kompakte Monatsübersicht erstellen")
+        st.subheader("🗓️ Kompakte Monatsübersicht erstellen")
         st.caption("Analysiert alle Veranstaltungen semantisch per KI für den gewählten Monat.")
 
         months_map = {
@@ -376,9 +377,8 @@ else:
             else:
                 monthly_msg = st.text_area(
                     "Nachricht anpassen:",
-                    value=st.session_state[month_key],
                     height=300,
-                    key=f"area_{month_key}",
+                    key=month_key,
                     label_visibility="collapsed"
                 )
 
@@ -429,7 +429,7 @@ else:
                         st.image(uploaded_img, use_container_width=True)
 
                     if st.session_state[post_key]:
-                        st.code(st.session_state[post_key], language=None)
+                        st.markdown(st.session_state[post_key], unsafe_allow_html=True)
                     else:
                         st.info("Noch kein Text generiert. Klicke rechts auf den Button.")
 
@@ -448,9 +448,8 @@ else:
                     else:
                         msg_input = st.text_area(
                             "Nachricht anpassen:",
-                            value=st.session_state[post_key],
                             height=260,
-                            key=f"box_{idx}",
+                            key=post_key,
                             label_visibility="collapsed"
                         )
 
@@ -462,13 +461,13 @@ else:
                                     if post_text:
                                         st.session_state[post_key] = post_text
                                         st.rerun()
-                                    else:
-                                        st.error("Server ausgelastet. Bitte kurz warten.")
+                                else:
+                                    st.error("Server ausgelastet. Bitte kurz warten.")
                         with c_btn2:
                             btn_text = "🚀 Mit Bild in Kanal posten" if uploaded_img else "🚀 Als Text in Kanal posten"
                             if st.button(btn_text, key=f"btn_{idx}", type="primary", use_container_width=True):
                                 if not msg_input.strip() or "Fehler bei KI" in msg_input:
-                                    st.warning("⚠️ Bitte warte auf einen gültigen Textentwurf vor dem Senden.")
+                                    st.warning("⚠️️ Bitte warte auf einen gültigen Textentwurf vor dem Senden.")
                                 else:
                                     if send_telegram_post(msg_input, uploaded_img):
                                         st.success("✅ Erfolgreich in den Kanal gesendet!")
