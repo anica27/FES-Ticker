@@ -32,7 +32,7 @@ def markdown_to_telegram_html(text: str) -> str:
     """Wandelt eventuelle Markdown-Reste zuverlässig in Telegram-kompatibles HTML um."""
     if not text:
         return ""
-    # Fett: **Text** -> <b>Text</b>
+    # Fett: **Text** oder __Text__ -> <b>Text</b>
     text = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', text)
     text = re.sub(r'__(.+?)__', r'<b>\1</b>', text)
     # Kursiv: *Text* oder _Text_ -> <i>Text</i>
@@ -108,7 +108,7 @@ def generate_post_with_gemini(raw_text: str, url: str):
         "<b>Mit dabei:</b>\n"
         "[Hier die Aufzählung nach den obigen Vorgaben einfügen]\n\n"
         "<b>Moderation:</b> [Name, falls vorhanden, sonst Zeile weglassen]\n\n"
-        "🗓️️ [Wochentag, Datum | Uhrzeit – zwingend dem Block 'Termin' entnehmen]\n"
+        "🗓 [Wochentag, Datum | Uhrzeit – zwingend dem Block 'Termin' entnehmen]\n"
         "📍 [Veranstaltungsort mit vollständiger Adresse]\n"
         "📝 [Anmeldeschluss: Wochentag, Datum – NUR falls Anmeldefrist vorhanden, sonst Zeile weglassen]\n"
         f"🔗 {url}\n\n"
@@ -159,7 +159,7 @@ def generate_monthly_overview_with_gemini(all_events: list, selected_month_name:
         "5. Verwende AUSSCHLIESSLICH Telegram-HTML (<b>fett</b>, <i>kursiv</i>) und KEIN Markdown (keine Sternchen oder Unterstriche)!\n\n"
         "Nutze exakt folgendes Ausgabe-Format:\n\n"
         "🔴 <b>Friedrich-Ebert-Stiftung Sachsen</b>\n"
-        f"🗓️️ <b>Unsere Veranstaltungen im {selected_month_name}:</b>\n\n"
+        f"🗓 <b>Unsere Veranstaltungen im {selected_month_name}:</b>\n\n"
         "• <b>[TT.MM.] | [Stadt / Ort]:</b> [Exakter Titel der Veranstaltung]\n"
         "(wiederhole diese Zeile für jede Veranstaltung dieses Monats)\n\n"
         "👉 <b>Alle Details zu den Terminen und zur Anmeldung findest du bei uns auf der Website:</b>\n"
@@ -437,21 +437,21 @@ else:
                     st.caption("✏️ **Aktion & Bearbeitung:**")
 
                     if not st.session_state[post_key]:
-                    if st.button("✨ Post mit KI generieren", key=f"gen_{idx}", type="secondary", use_container_width=True):
-                        with st.spinner("Gemini formuliert den Beitrag..."):
-                            post_text, err = generate_post_with_gemini(ev["raw_text"], ev["url"])
-                            if post_text:
-                                st.session_state[post_key] = post_text
-                                st.rerun()
-                            else:
-                                st.error(f"Server ausgelastet. Bitte gleich erneut versuchen ({err[:60]}...).")
-                else:
-                    msg_input = st.text_area(
-                        "Nachricht anpassen:",
-                        height=260,
-                        key=post_key,
-                        label_visibility="collapsed"
-                    )
+                        if st.button("✨ Post mit KI generieren", key=f"gen_{idx}", type="secondary", use_container_width=True):
+                            with st.spinner("Gemini formuliert den Beitrag..."):
+                                post_text, err = generate_post_with_gemini(ev["raw_text"], ev["url"])
+                                if post_text:
+                                    st.session_state[post_key] = post_text
+                                    st.rerun()
+                                else:
+                                    st.error(f"Server ausgelastet. Bitte gleich erneut versuchen ({err[:60]}...).")
+                    else:
+                        msg_input = st.text_area(
+                            "Nachricht anpassen:",
+                            height=260,
+                            key=post_key,
+                            label_visibility="collapsed"
+                        )
 
                         c_btn1, c_btn2 = st.columns([1, 1])
                         with c_btn1:
@@ -461,13 +461,13 @@ else:
                                     if post_text:
                                         st.session_state[post_key] = post_text
                                         st.rerun()
-                                else:
-                                    st.error("Server ausgelastet. Bitte kurz warten.")
+                                    else:
+                                        st.error("Server ausgelastet. Bitte kurz warten.")
                         with c_btn2:
                             btn_text = "🚀 Mit Bild in Kanal posten" if uploaded_img else "🚀 Als Text in Kanal posten"
                             if st.button(btn_text, key=f"btn_{idx}", type="primary", use_container_width=True):
                                 if not msg_input.strip() or "Fehler bei KI" in msg_input:
-                                    st.warning("⚠️️ Bitte warte auf einen gültigen Textentwurf vor dem Senden.")
+                                    st.warning("⚠️ Bitte warte auf einen gültigen Textentwurf vor dem Senden.")
                                 else:
                                     if send_telegram_post(msg_input, uploaded_img):
                                         st.success("✅ Erfolgreich in den Kanal gesendet!")
