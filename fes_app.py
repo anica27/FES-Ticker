@@ -16,7 +16,7 @@ CHANNEL_ID = st.secrets.get("CHANNEL_ID", "")
 APP_PASSWORD = st.secrets.get("APP_PASSWORD", "")
 # ==========================================
 
-ai_client = genai.Client(api_key=GEMINI_API_KEY.strip())
+ai_client = genai.Client(api_key=GEMINI_API_KEY.strip()) if GEMINI_API_KEY else None
 
 BASE_URL = "https://www.fes.de"
 OVERVIEW_URL = "https://www.fes.de/landesbuero-sachsen/veranstaltungen-rueckblicke"
@@ -27,6 +27,18 @@ HEADERS = {
 
 def clean_text(text: str) -> str:
     return re.sub(r'\s+', ' ', text).strip()
+
+def markdown_to_telegram_html(text: str) -> str:
+    """Konvertiert verlässlich Markdown-Syntax in valides Telegram-HTML."""
+    if not text:
+        return ""
+    # Fett formatieren: **text** -> <b>text</b>
+    text = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', text)
+    # Kursiv formatieren: *text* -> <i>text</i> (nur wenn nicht Aufzählungszeichen am Zeilenanfang)
+    text = re.sub(r'(?<!^)(?<!\n)\*(.+?)\*', r'<i>\1</i>', text)
+    # Underscore kursiv: _text_ -> <i>text</i>
+    text = re.sub(r'(?<!\w)_(.+?)_(?!\w)', r'<i>\1</i>', text)
+    return text
 
 def send_telegram_post(content: str, uploaded_image=None) -> bool:
     """Sendet Bild- oder Textnachricht mit HTML-Unterstützung."""
@@ -65,14 +77,17 @@ def send_telegram_post(content: str, uploaded_image=None) -> bool:
         return False
 
 def generate_post_with_gemini(raw_text: str, url: str):
-    """Erstellt den ausführlichen Einzelpost mit präzisen Rollen, akademischem Hintergrund und passendem Hook."""
+    """Erstellt den ausführlichen Einzelpost mit Du-Form und zwingendem HTML."""
+    if not ai_client:
+        return None, "Kein GEMINI_API_KEY konfiguriert."
+
     prompt = (
         "Du bist Redakteur:in für den Telegram-Kanal der Friedrich-Ebert-Stiftung Sachsen.\n"
         "Erstelle aus dem folgenden Veranstaltungstext eine prägnante, hochwertige Telegram-Nachricht.\n\n"
         "STRIKTE FORMATIERUNGS-REGELN:\n"
-        "1. Verwende KEINE Markdown-Syntax! Keine Asterisks (*), keine Unterstriche (_).\n"
-        "2. Verwende AUSSCHLIESSLICH HTML-Tags: **Text** für fett und *Text* für kursiv.\n"
-        "3. Jedes ** und * muss korrekt wieder geschlossen werden ( bzw. ).\n"
+        "1. Verwende AUSSCHLIESSLICH HTML-Tags: <b>Text</b> für fett und <i>Text</i> für kursiv.\n"
+        "2. Verwende KEINE Markdown-Syntax, keine doppelten Sternchen (**), keine einfachen Sternchen (*).\n"
+        "3. Jedes <b> und <i> muss korrekt wieder geschlossen werden (</b> bzw. </i>).\n"
         "4. Direkte, nahbare Du-Ansprache ('Sei dabei', 'Erlebe', 'Entdecke').\n\n"
         "INHALTLICHE VORGABEN:\n"
         "- Hook/Einleitung: Passe den Teaser genau an den Charakter der Veranstaltung an. "
@@ -82,17 +97,17 @@ def generate_post_with_gemini(raw_text: str, url: str):
         "- 'Mit dabei:'-Bereich:\n"
         "  * Nenne die Personen mit ihrem vollen Namen, akademischen Titeln (Prof., Dr. etc., falls angegeben), "
         "ihrem Fachgebiet/Hintergrund bzw. ihrer Institution (nicht bloß die Stadt!).\n"
-        "  * Wenn die Personen in Rollen schlüpfen (z. B. historische Figuren/Philosoph:innen), erwähne diese Rolle zwingend.\n"
+        "  * Wenn Personen in Rollen schlüpfen (z. B. historische Figuren/Philosoph:innen), erwähne diese Rolle zwingend.\n"
         "  * Format: • Name (ggf. Titel) – Fachbereich/Institution [ggf. (als Rolle)]\n"
         "  * Falls keine Personen genannt sind, den gesamten Block 'Mit dabei:' weglassen.\n\n"
         "Nutze exakt folgendes Schema:\n\n"
-        "🔴 **Friedrich-Ebert-Stiftung Sachsen**\n"
-        "🗣️ **[Format, z. B. Bürgergespräch / Fachgespräch / Szenische Diskussion / Lesung]**:\n"
-        "**„[TITEL DER VERANSTALTUNG]“**\n\n"
+        "🔴 <b>Friedrich-Ebert-Stiftung Sachsen</b>\n"
+        "🗣️ <b>[Format, z. B. Bürgergespräch / Fachgespräch / Szenische Diskussion / Lesung]</b>:\n"
+        "<b>„[TITEL DER VERANSTALTUNG]“</b>\n\n"
         "[1 bis maximal 2 Sätze packender Einstieg zur Kernfrage des Abends, der Neugier weckt]\n\n"
-        "**Mit dabei:**\n"
+        "<b>Mit dabei:</b>\n"
         "[Hier die Aufzählung nach den obigen Vorgaben einfügen]\n\n"
-        "**Moderation:** [Name, falls vorhanden, sonst Zeile weglassen]\n\n"
+        "<b>Moderation:</b> [Name, falls vorhanden, sonst Zeile weglassen]\n\n"
         "🗓️ [Wochentag, Datum | Uhrzeit – zwingend dem Block 'Termin' entnehmen]\n"
         "📍 [Veranstaltungsort mit vollständiger Adresse]\n"
         "📝 [Anmeldeschluss: Wochentag, Datum – NUR falls Anmeldefrist vorhanden, sonst Zeile weglassen]\n"
@@ -102,8 +117,8 @@ def generate_post_with_gemini(raw_text: str, url: str):
     )
 
     models_to_try = [
-        "gemini-3.8-flash",
-        "gemini-3.5-flash-lite",
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
     ]
 
     last_error = ""
@@ -115,7 +130,8 @@ def generate_post_with_gemini(raw_text: str, url: str):
                     contents=prompt,
                 )
                 if response.text:
-                    return response.text.strip(), None
+                    clean_output = markdown_to_telegram_html(response.text.strip())
+                    return clean_output, None
             except Exception as e:
                 last_error = str(e)
                 time.sleep(1.5)
@@ -124,12 +140,15 @@ def generate_post_with_gemini(raw_text: str, url: str):
 
 def generate_monthly_overview_with_gemini(all_events: list, selected_month_name: str, selected_month_num: str):
     """Filtert und strukturiert alle Termine eines Monats in einem einzigen KI-Aufruf."""
+    if not ai_client:
+        return None, "Kein GEMINI_API_KEY konfiguriert."
+
     events_dump = ""
     for idx, ev in enumerate(all_events, 1):
         events_dump += f"\n--- VERANSTALTUNG {idx} ---\nLink: {ev['url']}\nText:\n{ev['raw_text'][:2500]}\n"
 
     prompt = (
-        f"Du bist Redakteur für den Telegram-Kanal der Friedrich-Ebert-Stiftung Sachsen.\n"
+        f"Du bist Redakteur:in für den Telegram-Kanal der Friedrich-Ebert-Stiftung Sachsen.\n"
         f"Erstelle eine prägnante Monatsübersicht aller Veranstaltungen für den Monat {selected_month_name}.\n\n"
         "Aufgaben:\n"
         f"1. Finde alle Veranstaltungen, die im Monat {selected_month_name} (Monat {selected_month_num}) stattfinden.\n"
@@ -150,8 +169,8 @@ def generate_monthly_overview_with_gemini(all_events: list, selected_month_name:
     )
 
     models_to_try = [
-        "gemini-3.8-flash",
-        "gemini-3.5-flash-lite",
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
     ]
 
     last_error = ""
@@ -163,7 +182,8 @@ def generate_monthly_overview_with_gemini(all_events: list, selected_month_name:
                     contents=prompt,
                 )
                 if response.text:
-                    return response.text.strip(), None
+                    clean_output = markdown_to_telegram_html(response.text.strip())
+                    return clean_output, None
             except Exception as e:
                 last_error = str(e)
                 time.sleep(1.5)
@@ -308,7 +328,7 @@ else:
     # TAB 1: MONATSÜBERSICHT
     # ----------------------------------------------------
     with tab_monthly:
-        st.subheader("🗓️ Kompakte Monatsübersicht erstellen")
+        st.subheader("🗓️️ Kompakte Monatsübersicht erstellen")
         st.caption("Analysiert alle Veranstaltungen semantisch per KI für den gewählten Monat.")
 
         months_map = {
