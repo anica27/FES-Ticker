@@ -442,14 +442,16 @@ else:
                                 post_text, err = generate_post_with_gemini(ev["raw_text"], ev["url"])
                                 if post_text:
                                     st.session_state[post_key] = post_text
+                                    st.session_state[f"box_{idx}"] = post_text
                                     st.rerun()
                                 else:
                                     st.error(f"Server ausgelastet. Bitte gleich erneut versuchen ({err[:60]}...).")
                     else:
                         msg_input = st.text_area(
                             "Nachricht anpassen:",
+                            value=st.session_state[post_key],
                             height=260,
-                            key=post_key,
+                            key=f"box_{idx}",
                             label_visibility="collapsed"
                         )
 
@@ -460,6 +462,7 @@ else:
                                     post_text, err = generate_post_with_gemini(ev["raw_text"], ev["url"])
                                     if post_text:
                                         st.session_state[post_key] = post_text
+                                        st.session_state[f"box_{idx}"] = post_text
                                         st.rerun()
                                     else:
                                         st.error("Server ausgelastet. Bitte kurz warten.")
