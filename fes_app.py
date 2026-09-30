@@ -461,8 +461,8 @@ else:
                                     if post_text:
                                         st.session_state[post_key] = post_text
                                         st.rerun()
-                                else:
-                                    st.error("Server ausgelastet. Bitte kurz warten.")
+                     else:
+                        st.error("Server ausgelastet. Bitte kurz warten.")
                         with c_btn2:
                             btn_text = "🚀 Mit Bild in Kanal posten" if uploaded_img else "🚀 Als Text in Kanal posten"
                             if st.button(btn_text, key=f"btn_{idx}", type="primary", use_container_width=True):
