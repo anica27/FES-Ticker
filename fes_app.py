@@ -437,21 +437,21 @@ else:
                     st.caption("✏️ **Aktion & Bearbeitung:**")
 
                     if not st.session_state[post_key]:
-                        if st.button("✨ Post mit KI generieren", key=f"gen_{idx}", type="secondary", use_container_width=True):
-                            with st.spinner("Gemini formuliert den Beitrag..."):
-                                post_text, err = generate_post_with_gemini(ev["raw_text"], ev["url"])
-                                if post_text:
-                                    st.session_state[post_key] = post_text
-                                    st.rerun()
-                                else:
-                                    st.error(f"Server ausgelastet. Bitte gleich erneut versuchen ({err[:60]}...).")
-                    else:
-                        msg_input = st.text_area(
-                            "Nachricht anpassen:",
-                            height=260,
-                            key=post_key,
-                            label_visibility="collapsed"
-                        )
+                    if st.button("✨ Post mit KI generieren", key=f"gen_{idx}", type="secondary", use_container_width=True):
+                        with st.spinner("Gemini formuliert den Beitrag..."):
+                            post_text, err = generate_post_with_gemini(ev["raw_text"], ev["url"])
+                            if post_text:
+                                st.session_state[post_key] = post_text
+                                st.rerun()
+                            else:
+                                st.error(f"Server ausgelastet. Bitte gleich erneut versuchen ({err[:60]}...).")
+                else:
+                    msg_input = st.text_area(
+                        "Nachricht anpassen:",
+                        height=260,
+                        key=post_key,
+                        label_visibility="collapsed"
+                    )
 
                         c_btn1, c_btn2 = st.columns([1, 1])
                         with c_btn1:
