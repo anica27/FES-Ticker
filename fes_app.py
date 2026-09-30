@@ -102,7 +102,7 @@ def generate_post_with_gemini(raw_text: str, url: str):
         "  * Falls keine Personen genannt sind, den gesamten Block 'Mit dabei:' weglassen.\n\n"
         "Nutze exakt folgendes Schema:\n\n"
         "🔴 <b>Friedrich-Ebert-Stiftung Sachsen</b>\n"
-        "🗣️ <b>[Format, z. B. Bürgergespräch / Fachgespräch / Szenische Diskussion / Lesung]</b>:\n"
+        "🗣️ [Format, z. B. Bürgergespräch / Fachgespräch / Szenische Diskussion / Lesung]\n"
         "<b>„[TITEL DER VERANSTALTUNG]“</b>\n\n"
         "[1 bis maximal 2 Sätze packender Einstieg zur Kernfrage des Abends, der Neugier weckt]\n\n"
         "<b>Mit dabei:</b>\n"
