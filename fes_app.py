@@ -117,8 +117,9 @@ def generate_post_with_gemini(raw_text: str, url: str):
     )
 
     models_to_try = [
-        "gemini-2.5-flash",
-        "gemini-2.0-flash",
+        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3.8-flash",
     ]
 
     last_error = ""
