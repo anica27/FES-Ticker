@@ -212,6 +212,10 @@ def parse_detail_page(url: str) -> dict:
         "raw_text": cleaned_text
     }
 
+@st.cache_data(ttl=3600, show_spinner=False)
+def fetch_events(max_pages: int = 3) -> list[dict]:
+    # ... Rest der Funktion bleibt exakt wie bisher
+    
 def fetch_events(max_pages: int = 3) -> list[dict]:
     """Sucht alle Termine über mehrere Seiten hinweg."""
     current_url = OVERVIEW_URL
