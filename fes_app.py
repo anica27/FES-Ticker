@@ -214,7 +214,10 @@ def parse_detail_page(url: str) -> dict:
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_events(max_pages: int = 3) -> list[dict]:
-    # ... Rest der Funktion bleibt exakt wie bisher
+    """Sucht alle Termine über mehrere Seiten hinweg (gecached für 1 Stunde)."""
+    current_url = OVERVIEW_URL
+    all_detail_urls = []
+    # ... Rest der Funktion bleibt exakt unverändert
     
 def fetch_events(max_pages: int = 3) -> list[dict]:
     """Sucht alle Termine über mehrere Seiten hinweg."""
@@ -302,15 +305,10 @@ if not check_password():
 # 2. Reguläre App für eingeloggte Personen
 st.title("🏛️ FES Sachsen – Veranstaltungs-Ticker")
 
-col_logout1, col_logout2 = st.columns([5, 1])
-with col_logout2:
-    if st.button("Abmelden", use_container_width=True):
-        st.session_state.authenticated = False
-        st.rerun()
-
 col1, col2 = st.columns([3, 1])
 with col2:
     if st.button("🔄 Website neu scannen", use_container_width=True):
+        fetch_events.clear()  # Leert gezielt den Cache des Scrapers
         st.session_state.clear()
         st.rerun()
 
