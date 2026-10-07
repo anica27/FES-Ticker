@@ -156,8 +156,8 @@ def generate_monthly_overview_with_gemini(all_events: list, selected_month_name:
         "5. Verwende AUSSCHLIESSLICH Telegram-HTML (<b>fett</b>, <i>kursiv</i>) und KEIN Markdown (keine Sternchen oder Unterstriche)!\n\n"
         "Nutze exakt folgendes Ausgabe-Format:\n\n"
         "🔴 <b>Friedrich-Ebert-Stiftung Sachsen</b>\n"
-        f"🗓 <b>Unsere Veranstaltungen im {selected_month_name}:</b>\n\n"
-        "• <b>[TT.MM.] | [Stadt / Ort]:</b> [Exakter Titel der Veranstaltung]\n"
+        f" 🗓 <b>Unsere Veranstaltungen im {selected_month_name}:</b>\n\n"
+        "• <b>[TT.MM.] | Stadt / Ort:</b> [Exakter Titel der Veranstaltung]\n"
         "(wiederhole diese Zeile für jede Veranstaltung dieses Monats)\n\n"
         "👉 <b>Alle Details zu den Terminen und zur Anmeldung findest du bei uns auf der Website:</b>\n"
         "https://www.fes.de/landesbuero-sachsen/veranstaltungen-rueckblicke\n\n"
@@ -302,14 +302,21 @@ st.set_page_config(page_title="FES Ticker Manager", layout="wide")
 if not check_password():
     st.stop()
 
-# 2. Reguläre App für eingeloggte Personen
 st.title("🏛️ FES Sachsen – Veranstaltungs-Ticker")
 
-col1, col2 = st.columns([3, 1])
-with col2:
-    if st.button("🔄 Website neu scannen", use_container_width=True):
-        fetch_events.clear()  # Leert gezielt den Cache des Scrapers
+# Kopfzeile mit beiden Buttons (Scannen + Abmelden)
+col_head1, col_head2, col_head3 = st.columns([3, 1, 1])
+with col_head2:
+    if st.button("🔄 Neu scannen", use_container_width=True):
+        fetch_events.clear()
         st.session_state.clear()
+        st.session_state.authenticated = True  # Bleibt eingeloggt beim Neuscannen
+        st.rerun()
+
+with col_head3:
+    if st.button("Abmelden", use_container_width=True):
+        st.session_state.clear()
+        st.session_state.authenticated = False
         st.rerun()
 
 if "events" not in st.session_state:
