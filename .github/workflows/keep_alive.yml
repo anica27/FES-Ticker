@@ -2,9 +2,8 @@ name: Keep Streamlit Alive
 
 on:
   schedule:
-    # Läuft alle 6 Stunden (um 00:00, 06:00, 12:00 und 18:00 UTC)
+    # Läuft alle 6 Stunden (00:00, 06:00, 12:00, 18:00 UTC)
     - cron: '0 */6 * * *'
-  # Erlaubt es, den Ping manuell im GitHub-Reiter "Actions" zu testen
   workflow_dispatch:
 
 jobs:
@@ -13,5 +12,11 @@ jobs:
     steps:
       - name: Ping Streamlit App URL
         run: |
-          curl -sL --max-time 30 https://fes-ticker.streamlit.app > /dev/null
-          echo "Ping an fes-ticker.streamlit.app erfolgreich abgesetzt."
+          echo "Sende Ping an Streamlit App..."
+          curl -sL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+               --max-time 90 \
+               --connect-timeout 20 \
+               -o /dev/null \
+               -w "HTTP-Status: %{http_code}\nZeit gesamt: %{time_total}s\n" \
+               https://fes-ticker.streamlit.app || true
+          echo "Ping-Vorgang abgeschlossen."
