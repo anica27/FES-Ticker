@@ -77,7 +77,7 @@ def send_telegram_post(content: str, uploaded_image=None) -> bool:
         return False
 
 def generate_post_with_gemini(raw_text: str, url: str):
-    """Erstellt den ausführlichen Einzelpost mit Du-Form und validen HTML-Tags."""
+    """Erstellt den ausführlichen Einzelpost für Telegram mit validen HTML-Tags."""
     if not ai_client:
         return None, "Kein GEMINI_API_KEY konfiguriert."
 
@@ -85,26 +85,30 @@ def generate_post_with_gemini(raw_text: str, url: str):
         "Du bist Redakteur:in für den Telegram-Kanal der Friedrich-Ebert-Stiftung Sachsen.\n"
         "Erstelle aus dem folgenden Veranstaltungstext eine prägnante, hochwertige Telegram-Nachricht.\n\n"
         "STRIKTE FORMATIERUNGS-REGELN:\n"
-        "1. Verwende AUSSCHLIESSLICH HTML-Tags: **Text** für fett und *Text* für kursiv.\n"
+        "1. Verwende AUSSCHLIESSLICH HTML-Tags: <b>Text</b> für fett und <i>Text</i> für kursiv.\n"
         "2. KEINE Markdown-Syntax, keine doppelten Sternchen (**), keine einfachen Sternchen (*).\n"
-        "3. Jedes ** und * muss korrekt wieder geschlossen werden ( bzw. ).\n"
+        "3. Jedes <b> und <i> muss korrekt wieder geschlossen werden (</b> bzw. </i>).\n"
         "4. Direkte, nahbare Du-Ansprache ('Sei dabei', 'Erlebe', 'Entdecke').\n\n"
-        "INHALTLICHE VORGABEN:\n"
-        "- Hook/Einleitung: 1 bis maximal 2 Sätze Leitfrage oder inhaltlicher Kern. "
-        "Fordere NICHT pauschal zum 'Mitdiskutieren' auf, wenn es sich um ein Schau-/Rollengespräch, "
-        "ein Podium oder eine Lesung handelt! Lade stattdessen zum Zuhören, Erleben und Dabeisein ein.\n"
-        "- Referierende ('Mit dabei:'): Nenne Personen zwingend mit Funktion, Fachbereich oder Institution. "
-        "Reine Städtenamen (z. B. 'Name – Leipzig') sind STRENG VERBOTEN – suche im Text nach Professur, Institut oder Beruf!\n\n"
-        "Nutze exakt folgendes Schema:\n\n"
+        "STRIKTE REGELN ZU DEN PERSONEN (Mit dabei):\n"
+        "- Nutze für jede Person zwingend einen Aufzählungspunkt mit dem Zeichen '•' und Trennung per Gedankenstrich '–'.\n"
+        "- Schema je Zeile: • [Titel] [Vorname Nachname] – [Institution / Funktion / Fachbereich] (ggf. [als Rolle])\n"
+        "- Schreibe NIEMALS bloß den reinen Stadtnamen (z. B. VERBOTEN: 'Name – Leipzig')! Nenne immer die Institution, den Sender, das Medium oder die Universität.\n"
+        "- Falls Personen in historische oder philosophische Rollen schlüpfen, ergänze am Ende in Klammern: (als Rolle).\n"
+        "- Falls keine Personen im Text genannt sind, den gesamten Block 'Mit dabei:' weglassen.\n\n"
+        "INHALTLICHE VORGABEN ZUM HOOK:\n"
+        "- Formuliere 1 bis maximal 2 Sätze Leitfrage oder packenden Einstieg zum Kern der Veranstaltung.\n"
+        "- Fordere NICHT pauschal zum 'Mitdiskutieren' auf, wenn es sich um ein Schau-/Rollengespräch, "
+        "ein Podium oder eine Lesung handelt! Lade stattdessen zum Zuhören, Erleben und Dabeisein ein.\n\n"
+        "Nutze exakt folgendes Ausgabe-Schema:\n\n"
         "🔴 <b>Friedrich-Ebert-Stiftung Sachsen</b>\n"
-        "🗣️ [Format, z. B. Bürgergespräch / Fachgespräch / Szenische Diskussion / Lesung]\n"
+        "🗣️ <b>[Format, z. B. Bürgergespräch / Fachgespräch / Szenische Diskussion / Lesung]</b>:\n"
         "<b>„[TITEL DER VERANSTALTUNG]“</b>\n\n"
-        "[1 bis maximal 2 Sätze packender Einstieg zur Kernfrage des Abends, der Neugier weckt]\n\n"
+        "[1–2 Sätze packender Einstieg zur Kernfrage des Abends, der Neugier weckt]\n\n"
         "<b>Mit dabei:</b>\n"
         "• Thomas Härrsch – ZDF Landesstudio Sachsen\n"
         "• Dr. Judith Kretzschmar – Universität Leipzig (Zentrum Journalismus und Demokratie)\n"
         "(ersetze diese Beispielzeilen durch die tatsächlichen Personen aus dem Text im exakt selben Stil: • Name – Institution / Funktion)\n\n"
-        "<b>Moderation:</b> [Name, falls vorhanden, sonst Zeile weglassen]\n\n"
+        "<b>Moderation:</b> [Name, Funktion/Institution, falls vorhanden, sonst Zeile weglassen]\n\n"
         "🗓 [Wochentag, Datum | Uhrzeit – zwingend dem Block 'Termin' entnehmen]\n"
         "📍 [Veranstaltungsort mit vollständiger Adresse]\n"
         "📝 [Anmeldeschluss: Wochentag, Datum – NUR falls Anmeldefrist vorhanden, sonst Zeile weglassen]\n"
@@ -136,6 +140,63 @@ def generate_post_with_gemini(raw_text: str, url: str):
 
     return None, last_error
 
+def generate_instagram_caption_with_gemini(raw_text: str, url: str):
+    """Erstellt eine Instagram-Caption nach dem exakten CI-Stil der FES Sachsen."""
+    if not ai_client:
+        return None, "Kein GEMINI_API_KEY konfiguriert."
+
+    prompt = (
+        "Du bist Social-Media-Redakteur:in für den Instagram-Kanal der Friedrich-Ebert-Stiftung Sachsen (@fes_sachsen).\n"
+        "Erstelle aus dem folgenden Veranstaltungstext eine Instagram-Caption.\n\n"
+        "STRIKTE FORMATIERUNGS-REGELN:\n"
+        "1. Verwende KEINE HTML-Tags (kein <b>, kein <i>) und KEINE Markdown-Sternchen (** oder *).\n"
+        "2. Halte dich exakt an die vorgegebenen Emojis, Zeilenumbrüche und Satzformate.\n\n"
+        "INHALTLICHE VORGABEN:\n"
+        "- BESCHREIBUNGSTEXT KURZ HALTEN: Maximal 2 bis 3 prägnante Sätze (oder 1 kurzer Absatz) zum inhaltlichen Kern/Spannungsfeld! Keine langen Schachtelsätze, direkt auf den Punkt.\n"
+        "- BARRIEREFREIHEIT & EINTRITT: Hinter der Zeile '📎Der Eintritt ist frei.' MUSS zwingend ein kurzer Satz zur Barrierefreiheit folgen (z. B. 'Der Veranstaltungsort ist barrierefrei.' oder falls im Text konkrete Angaben zu Rollstuhl/Aufzug stehen, diese kurz zusammenfassen; falls keine Details im Text stehen, den Standard-Satz 'Der Veranstaltungsort ist barrierefrei.' nutzen).\n"
+        "- REFERIERENDE: Jede Zeile beginnt mit '👉[Vorname Nachname], [Institution/Funktion]'. Niemals nur eine Stadt nennen!\n\n"
+        "Nutze EXAKT folgende Vorlage und Struktur:\n\n"
+        "📝Save the Date!\n"
+        "[Exakter Titel der Veranstaltung]\n\n"
+        "📍[Genauer Raum / Location, vollständige Adresse]\n"
+        "📅[Wochentag-Kürzel, z. B. Di, TT.MM.JJ] 🕰[Uhrzeit, z. B. 18 Uhr oder 18:00–20:00 Uhr]\n\n"
+        "[Hier der kurze, kompakte Beschreibungstext: maximal 2 bis 3 Sätze zur Kernfrage / zum Inhalt]\n\n"
+        "Wir freuen uns u. a. auf:\n"
+        "👉[Titel Vorname Nachname], [Institution / Funktion / Fachbereich] [ggf. (als Rolle)]\n"
+        "(wiederhole die Zeile mit 👉 für jede beteiligte Person; falls keine Personen genannt sind, den gesamten Block weglassen)\n\n"
+        "Moderation: [Name, Funktion/Medium, falls vorhanden, sonst Zeile weglassen]\n\n"
+        "📎Der Eintritt ist frei. Der Veranstaltungsort ist barrierefrei.\n\n"
+        "❗️Anmeldung [ggf. bis Datum ergänzen], wie immer auf unserer Website (einfach den Link im Story-Highlight „Anmeldung“ nutzen).\n\n"
+        "[Falls im Text Kooperationspartner genannt sind: 'Eine Veranstaltung in Kooperation von Friedrich-Ebert-Stiftung Sachsen und [Partner].' sonst Zeile weglassen]\n\n"
+        "#fesSachsen #politischeBildung [3–5 passende thematische Hashtags wie z. B. #Sachsen #Demokratie]\n\n"
+        "Wichtig: Gib NUR die finale Caption aus, keinerlei Erklärungen davor oder danach.\n\n"
+        f"Webseitentext:\n{raw_text[:14000]}"
+    )
+
+    models_to_try = [
+        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3.8-flash",
+    ]
+
+    last_error = ""
+    for model_name in models_to_try:
+        for attempt in range(2):
+            try:
+                response = ai_client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                )
+                if response.text:
+                    clean_caption = re.sub(r'<[^>]+>', '', response.text.strip())
+                    clean_caption = clean_caption.replace("**", "").replace("__", "")
+                    return clean_caption, None
+            except Exception as e:
+                last_error = str(e)
+                time.sleep(1.5)
+
+    return None, last_error
+
 def generate_monthly_overview_with_gemini(all_events: list, selected_month_name: str, selected_month_num: str):
     """Filtert und strukturiert alle Termine eines Monats in einem einzigen KI-Aufruf."""
     if not ai_client:
@@ -156,8 +217,8 @@ def generate_monthly_overview_with_gemini(all_events: list, selected_month_name:
         "5. Verwende AUSSCHLIESSLICH Telegram-HTML (<b>fett</b>, <i>kursiv</i>) und KEIN Markdown (keine Sternchen oder Unterstriche)!\n\n"
         "Nutze exakt folgendes Ausgabe-Format:\n\n"
         "🔴 <b>Friedrich-Ebert-Stiftung Sachsen</b>\n"
-        f" 🗓 <b>Unsere Veranstaltungen im {selected_month_name}:</b>\n\n"
-        "• <b>[TT.MM.] | Stadt / Ort:</b> [Exakter Titel der Veranstaltung]\n"
+        f"🗓 <b>Unsere Veranstaltungen im {selected_month_name}:</b>\n\n"
+        "• <b>[TT.MM.] | [Stadt / Ort]:</b> [Exakter Titel der Veranstaltung]\n"
         "(wiederhole diese Zeile für jede Veranstaltung dieses Monats)\n\n"
         "👉 <b>Alle Details zu den Terminen und zur Anmeldung findest du bei uns auf der Website:</b>\n"
         "https://www.fes.de/landesbuero-sachsen/veranstaltungen-rueckblicke\n\n"
@@ -217,12 +278,6 @@ def fetch_events(max_pages: int = 3) -> list[dict]:
     """Sucht alle Termine über mehrere Seiten hinweg (gecached für 1 Stunde)."""
     current_url = OVERVIEW_URL
     all_detail_urls = []
-    # ... Rest der Funktion bleibt exakt unverändert
-    
-def fetch_events(max_pages: int = 3) -> list[dict]:
-    """Sucht alle Termine über mehrere Seiten hinweg."""
-    current_url = OVERVIEW_URL
-    all_detail_urls = []
     visited_pages = set()
 
     for page_idx in range(1, max_pages + 1):
@@ -271,10 +326,7 @@ def check_password() -> bool:
         st.info("Bitte unter 'Manage app' -> 'Settings' -> 'Secrets' die Zeile APP_PASSWORD = \"...\" eintragen.")
         return False
 
-    if "authenticated" not in st.session_state:
-        st.session_state.authenticated = False
-
-    if st.session_state.authenticated:
+    if st.session_state.get("authenticated", False):
         return True
 
     st.title("🔒 FES Sachsen Ticker – Login")
@@ -302,15 +354,15 @@ st.set_page_config(page_title="FES Ticker Manager", layout="wide")
 if not check_password():
     st.stop()
 
+# 2. Reguläre App für eingeloggte Personen
 st.title("🏛️ FES Sachsen – Veranstaltungs-Ticker")
 
-# Kopfzeile mit beiden Buttons (Scannen + Abmelden)
 col_head1, col_head2, col_head3 = st.columns([3, 1, 1])
 with col_head2:
     if st.button("🔄 Neu scannen", use_container_width=True):
         fetch_events.clear()
         st.session_state.clear()
-        st.session_state.authenticated = True  # Bleibt eingeloggt beim Neuscannen
+        st.session_state.authenticated = True
         st.rerun()
 
 with col_head3:
@@ -417,68 +469,117 @@ else:
 
         for idx, ev in enumerate(events):
             with st.expander(f"📌 {ev['title'][:75]}...", expanded=(idx == 0)):
-                col_l, col_r = st.columns([1, 1])
-
                 post_key = f"post_text_{idx}"
+                insta_key = f"insta_text_{idx}"
+
                 if post_key not in st.session_state:
                     st.session_state[post_key] = ""
+                if insta_key not in st.session_state:
+                    st.session_state[insta_key] = ""
 
-                with col_l:
-                    st.caption("💬 **Telegram-Vorschau & Bild:**")
-                    
-                    uploaded_img = st.file_uploader(
-                        "Optional: Grafik/Flyer hinzufügen",
-                        type=["jpg", "jpeg", "png", "webp"],
-                        key=f"uploader_{idx}"
-                    )
-                    if uploaded_img:
-                        st.image(uploaded_img, use_container_width=True)
+                # Die beiden Unter-Reiter für Telegram und Instagram
+                subtab_tg, subtab_ig = st.tabs(["💬 Telegram / WhatsApp (HTML)", "📸 Instagram (Caption & Emojis)"])
 
-                    if st.session_state[post_key]:
-                        st.markdown(st.session_state[post_key], unsafe_allow_html=True)
-                    else:
-                        st.info("Noch kein Text generiert. Klicke rechts auf den Button.")
+                # --- UNTER-REITER 1: TELEGRAM / WHATSAPP ---
+                with subtab_tg:
+                    col_l, col_r = st.columns([1, 1])
 
-                with col_r:
-                    st.caption("✏️ **Aktion & Bearbeitung:**")
-
-                    if not st.session_state[post_key]:
-                        if st.button("✨ Post mit KI generieren", key=f"gen_{idx}", type="secondary", use_container_width=True):
-                            with st.spinner("Gemini formuliert den Beitrag..."):
-                                post_text, err = generate_post_with_gemini(ev["raw_text"], ev["url"])
-                                if post_text:
-                                    st.session_state[post_key] = post_text
-                                    st.session_state[f"box_{idx}"] = post_text
-                                    st.rerun()
-                                else:
-                                    st.error(f"Server ausgelastet. Bitte gleich erneut versuchen ({err[:60]}...).")
-                    else:
-                        msg_input = st.text_area(
-                            "Nachricht anpassen:",
-                            value=st.session_state[post_key],
-                            height=260,
-                            key=f"box_{idx}",
-                            label_visibility="collapsed"
+                    with col_l:
+                        st.caption("💬 **Telegram-Vorschau & Bild:**")
+                        uploaded_img = st.file_uploader(
+                            "Optional: Grafik/Flyer hinzufügen",
+                            type=["jpg", "jpeg", "png", "webp"],
+                            key=f"uploader_tg_{idx}"
                         )
+                        if uploaded_img:
+                            st.image(uploaded_img, use_container_width=True)
 
-                        c_btn1, c_btn2 = st.columns([1, 1])
-                        with c_btn1:
-                            if st.button("🔄 Neu generieren", key=f"regen_{idx}", use_container_width=True):
-                                with st.spinner("Gemini generiert neu..."):
+                        if st.session_state[post_key]:
+                            st.markdown(st.session_state[post_key], unsafe_allow_html=True)
+                        else:
+                            st.info("Noch kein Telegram-Text generiert.")
+
+                    with col_r:
+                        st.caption("✏️ **Aktion & Bearbeitung (Telegram):**")
+                        if not st.session_state[post_key]:
+                            if st.button("✨ Telegram-Post generieren", key=f"gen_{idx}", type="secondary", use_container_width=True):
+                                with st.spinner("Gemini formuliert den Telegram-Post..."):
                                     post_text, err = generate_post_with_gemini(ev["raw_text"], ev["url"])
                                     if post_text:
                                         st.session_state[post_key] = post_text
-                                        st.session_state[f"box_{idx}"] = post_text
+                                        st.rerun()
+                                    else:
+                                        st.error(f"Server ausgelastet. Bitte gleich erneut versuchen ({err[:60]}...).")
+                        else:
+                            msg_input = st.text_area(
+                                "Nachricht anpassen:",
+                                height=260,
+                                key=post_key,
+                                label_visibility="collapsed"
+                            )
+
+                            c_btn1, c_btn2 = st.columns([1, 1])
+                            with c_btn1:
+                                if st.button("🔄 Neu generieren", key=f"regen_{idx}", use_container_width=True):
+                                    with st.spinner("Gemini generiert neu..."):
+                                        post_text, err = generate_post_with_gemini(ev["raw_text"], ev["url"])
+                                        if post_text:
+                                            st.session_state[post_key] = post_text
+                                            st.rerun()
+                                        else:
+                                            st.error("Server ausgelastet. Bitte kurz warten.")
+                            with c_btn2:
+                                btn_text = "🚀 Mit Bild in Kanal posten" if uploaded_img else "🚀 Als Text in Kanal posten"
+                                if st.button(btn_text, key=f"btn_{idx}", type="primary", use_container_width=True):
+                                    if not msg_input.strip() or "Fehler bei KI" in msg_input:
+                                        st.warning("⚠️ Bitte warte auf einen gültigen Textentwurf vor dem Senden.")
+                                    else:
+                                        if send_telegram_post(msg_input, uploaded_img):
+                                            st.success("✅ Erfolgreich in den Kanal gesendet!")
+                                        else:
+                                            st.error("❌ Fehler beim Senden. Prüfe Bot-Rechte und Kanal-ID.")
+
+                # --- UNTER-REITER 2: INSTAGRAM ---
+                with subtab_ig:
+                    col_ig_l, col_ig_r = st.columns([1, 1])
+
+                    with col_ig_l:
+                        st.caption("📸 **Instagram-Vorschau:**")
+                        if st.session_state[insta_key]:
+                            st.text_area(
+                                "Vorschau (nur lesbar):",
+                                value=st.session_state[insta_key],
+                                height=360,
+                                disabled=True,
+                                label_visibility="collapsed"
+                            )
+                        else:
+                            st.info("Noch keine Instagram-Caption generiert. Klicke rechts auf den Button.")
+
+                    with col_ig_r:
+                        st.caption("✏️ **Aktion & Bearbeitung (Instagram):**")
+                        if not st.session_state[insta_key]:
+                            if st.button("✨ Instagram-Caption generieren", key=f"gen_ig_{idx}", type="secondary", use_container_width=True):
+                                with st.spinner("Gemini schreibt die Instagram-Caption..."):
+                                    ig_text, err = generate_instagram_caption_with_gemini(ev["raw_text"], ev["url"])
+                                    if ig_text:
+                                        st.session_state[insta_key] = ig_text
+                                        st.rerun()
+                                    else:
+                                        st.error(f"Server ausgelastet. Bitte gleich erneut versuchen ({err[:60]}...).")
+                        else:
+                            ig_input = st.text_area(
+                                "Caption anpassen / kopieren:",
+                                height=300,
+                                key=insta_key,
+                                label_visibility="collapsed"
+                            )
+                            if st.button("🔄 Caption neu generieren", key=f"regen_ig_{idx}", use_container_width=True):
+                                with st.spinner("Gemini generiert neu..."):
+                                    ig_text, err = generate_instagram_caption_with_gemini(ev["raw_text"], ev["url"])
+                                    if ig_text:
+                                        st.session_state[insta_key] = ig_text
                                         st.rerun()
                                     else:
                                         st.error("Server ausgelastet. Bitte kurz warten.")
-                        with c_btn2:
-                            btn_text = "🚀 Mit Bild in Kanal posten" if uploaded_img else "🚀 Als Text in Kanal posten"
-                            if st.button(btn_text, key=f"btn_{idx}", type="primary", use_container_width=True):
-                                if not msg_input.strip() or "Fehler bei KI" in msg_input:
-                                    st.warning("⚠️ Bitte warte auf einen gültigen Textentwurf vor dem Senden.")
-                                else:
-                                    if send_telegram_post(msg_input, uploaded_img):
-                                        st.success("✅ Erfolgreich in den Kanal gesendet!")
-                                    else:
-                                        st.error("❌ Fehler beim Senden. Prüfe Bot-Rechte und Kanal-ID.")
+                            st.caption("📋 *Tipp: Klicke oben rechts im Textfeld auf das Kopier-Icon, um die Caption direkt in die Zwischenablage zu nehmen.*")
