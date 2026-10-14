@@ -141,7 +141,7 @@ def generate_post_with_gemini(raw_text: str, url: str):
     return None, last_error
 
 def generate_instagram_caption_with_gemini(raw_text: str, url: str):
-    """Erstellt eine Instagram-Caption nach dem exakten CI-Stil der FES Sachsen."""
+    """Erstellt eine Instagram-Caption nach dem exakten CI-Stil der FES Sachsen mit faktenbasierter Barrierefreiheit."""
     if not ai_client:
         return None, "Kein GEMINI_API_KEY konfiguriert."
 
@@ -152,9 +152,16 @@ def generate_instagram_caption_with_gemini(raw_text: str, url: str):
         "1. Verwende KEINE HTML-Tags (kein <b>, kein <i>) und KEINE Markdown-Sternchen (** oder *).\n"
         "2. Halte dich exakt an die vorgegebenen Emojis, Zeilenumbrüche und Satzformate.\n\n"
         "INHALTLICHE VORGABEN:\n"
-        "- BESCHREIBUNGSTEXT KURZ HALTEN: Maximal 2 bis 3 prägnante Sätze (oder 1 kurzer Absatz) zum inhaltlichen Kern/Spannungsfeld! Keine langen Schachtelsätze, direkt auf den Punkt.\n"
-        "- BARRIEREFREIHEIT & EINTRITT: Hinter der Zeile '📎Der Eintritt ist frei.' MUSS zwingend ein kurzer Satz zur Barrierefreiheit folgen (z. B. 'Der Veranstaltungsort ist barrierefrei.' oder falls im Text konkrete Angaben zu Rollstuhl/Aufzug stehen, diese kurz zusammenfassen; falls keine Details im Text stehen, den Standard-Satz 'Der Veranstaltungsort ist barrierefrei.' nutzen).\n"
-        "- REFERIERENDE: Jede Zeile beginnt mit '👉[Vorname Nachname], [Institution/Funktion]'. Niemals nur eine Stadt nennen!\n\n"
+        "- BESCHREIBUNGSTEXT EXTREM KURZ: Maximal 2 bis 3 prägnante Sätze (oder 1 kurzer Absatz) zum inhaltlichen Kern/Spannungsfeld! Keine langen Schachtelsätze, direkt auf den Punkt.\n"
+        "- REFERIERENDE: Jede Zeile beginnt mit '👉[Vorname Nachname], [Institution/Funktion]'. Niemals nur eine Stadt nennen!\n"
+        "- EINTRITT & PRÜFUNG DER BARRIEREFREIHEIT:\n"
+        "  * Die Zeile beginnt immer mit '📎Der Eintritt ist frei.'\n"
+        "  * Prüfe den Webseitentext genau auf Angaben zur Barrierefreiheit und ergänze ZWINGEND GENAU EINEN kurzen Folgesatz:\n"
+        "    - Wenn der Ort laut Text barrierefrei / rollstuhlgerecht ist: 'Der Veranstaltungsort ist barrierefrei.'\n"
+        "    - Wenn der Ort laut Text NICHT barrierefrei ist: 'Der Veranstaltungsort ist leider nicht barrierefrei.'\n"
+        "    - Wenn der Ort laut Text nur teilweise/eingeschränkt zugänglich ist: 'Der Veranstaltungsort ist nur eingeschränkt barrierefrei.'\n"
+        "    - Wenn im Text KEINE Angaben zur Barrierefreiheit zu finden sind: 'Bei Fragen zur Barrierefreiheit wende dich bitte rechtzeitig an uns.'\n"
+        "  * Übernimm NIEMALS lange Detailbeschreibungen zu Aufzügen, Rampen, Sehbehinderten-Markierungen oder Sanitäranlagen!\n\n"
         "Nutze EXAKT folgende Vorlage und Struktur:\n\n"
         "📝Save the Date!\n"
         "[Exakter Titel der Veranstaltung]\n\n"
@@ -165,7 +172,7 @@ def generate_instagram_caption_with_gemini(raw_text: str, url: str):
         "👉[Titel Vorname Nachname], [Institution / Funktion / Fachbereich] [ggf. (als Rolle)]\n"
         "(wiederhole die Zeile mit 👉 für jede beteiligte Person; falls keine Personen genannt sind, den gesamten Block weglassen)\n\n"
         "Moderation: [Name, Funktion/Medium, falls vorhanden, sonst Zeile weglassen]\n\n"
-        "📎Der Eintritt ist frei. Der Veranstaltungsort ist barrierefrei.\n\n"
+        "📎Der Eintritt ist frei. [Hier genau einer der 4 vorgegebenen Folgesätze zur Barrierefreiheit]\n\n"
         "❗️Anmeldung [ggf. bis Datum ergänzen], wie immer auf unserer Website (einfach den Link im Story-Highlight „Anmeldung“ nutzen).\n\n"
         "[Falls im Text Kooperationspartner genannt sind: 'Eine Veranstaltung in Kooperation von Friedrich-Ebert-Stiftung Sachsen und [Partner].' sonst Zeile weglassen]\n\n"
         "#fesSachsen #politischeBildung [3–5 passende thematische Hashtags wie z. B. #Sachsen #Demokratie]\n\n"
@@ -582,4 +589,3 @@ else:
                                         st.rerun()
                                     else:
                                         st.error("Server ausgelastet. Bitte kurz warten.")
-                            st.caption("📋 *Tipp: Klicke oben rechts im Textfeld auf das Kopier-Icon, um die Caption direkt in die Zwischenablage zu nehmen.*")
